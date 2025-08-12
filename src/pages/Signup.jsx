@@ -46,6 +46,8 @@ export default function Signup() {
         return;
       }
 
+      
+
       // Create new user
       const newUser = {
         firstName: formData.firstName,

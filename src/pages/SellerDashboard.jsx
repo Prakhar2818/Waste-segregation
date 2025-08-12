@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { statesWithCities } from "../assets/ConstantData";
 import Logo from "../assets/logo.png";
+import axios from "axios";
 import {
   BarChart,
   Bar,
@@ -12,19 +13,46 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import WasteTable from "../components/WasteMOdal";
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
-  // Static Data for categories
-  const staticData = [
-    { category: "PET", quantity: 120 },
-    { category: "HDPE", quantity: 90 },
-    { category: "PVC", quantity: 60 },
-    { category: "LDPE", quantity: 45 },
-    { category: "PP", quantity: 80 },
-  ];
+
+  const [staticData, setStaticData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+
+  useEffect(() => {
+    const fetchWeightsData = async () => {
+      try {
+        setLoading(true);
+
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/weights`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Axios response me data already parsed hota hai
+        setStaticData(response.data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching weights data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeightsData();
+  }, []);
+
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -41,14 +69,14 @@ export default function Dashboard() {
   const handleListClick = (category) => {
     // Find the item data for this category
     const itemData = staticData.find(item => item.category === category);
-    
+
     setSelectedItem({
       category,
       quantity: itemData?.quantity || 0,
       pricePerKg: 50,
       location: city || "Mumbai"
     });
-    
+
     setFormData({
       category,
       quantity: itemData?.quantity || 0,
@@ -57,7 +85,7 @@ export default function Dashboard() {
       location: city || "Mumbai",
       contactNumber: "",
     });
-    
+
     setShowModal(true);
   };
 
@@ -75,19 +103,19 @@ export default function Dashboard() {
       seller: "Current User",
       status: "available"
     };
-    
+
     // Save to localStorage
     const savedListings = localStorage.getItem("wasteListings");
     const listings = savedListings ? JSON.parse(savedListings) : [];
     const updatedListings = [...listings, newListing];
     localStorage.setItem("wasteListings", JSON.stringify(updatedListings));
-    
+
     setShowModal(false);
     // Navigate to listing page to show all listings
-    navigate("/seller-listing", { 
-      state: { 
+    navigate("/seller-listing", {
+      state: {
         category: selectedItem.category
-      } 
+      }
     });
   };
 
@@ -298,9 +326,9 @@ export default function Dashboard() {
                 {staticData.map((item, index) => (
                   <tr className="w-100" key={item.category} style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
                     <td style={{ padding: "12px" }}>{item.category}</td>
-                    <td style={{ padding: "12px" }}>{item.quantity}</td>
+                    <td style={{ padding: "12px" }}>{item.weights}</td>
                     <td style={{ padding: "12px" }}>
-                      <button 
+                      <button
                         className="btn btn-success"
                         onClick={() => handleListClick(item.category)}
                       >
@@ -323,9 +351,9 @@ export default function Dashboard() {
                       <i className="bi bi-file-plus me-2 text-primary"></i>
                       Create New {selectedItem?.category} Listing
                     </h5>
-                    <button 
-                      type="button" 
-                      className="btn-close" 
+                    <button
+                      type="button"
+                      className="btn-close"
                       onClick={() => setShowModal(false)}
                     ></button>
                   </div>
@@ -436,12 +464,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Waste Table */}
-          <div className="row mt-4">
-            <div className="col-12">
-              <WasteTable />
-            </div>
-          </div>
+          
         </div>
       </div>
     </div>

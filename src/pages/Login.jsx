@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import EcoLogo from "../assets/eco-worth.png";
 import { authUtils } from '../utils/auth';
+import axios from 'axios';
+import qs from "qs";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,14 +13,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('savedEmail');
-    const savedPassword = localStorage.getItem('savedPassword');
-    if (savedEmail && savedPassword) {
-      setEmail(savedEmail);
-      setPassword(savedPassword);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedEmail = localStorage.getItem('savedEmail');
+  //   const savedPassword = localStorage.getItem('savedPassword');
+  //   if (savedEmail && savedPassword) {
+  //     setEmail(savedEmail);
+  //     setPassword(savedPassword);
+  //   }
+  // }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -33,18 +35,32 @@ export default function Login() {
       const allUsers = [...defaultCredentials, ...registeredUsers];
       
       // Find user with matching credentials
-      const user = allUsers.find(u => u.email === email && u.password === password);
+      // const user = allUsers.find(u => u.email === email && u.password === password);
       
-      if (user) {
-        // Save authentication state
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('authToken', `token_${Date.now()}`);
-        localStorage.setItem('user', JSON.stringify(user));
+      // console.log(email,password)
+      if (email && password) {
+       const response = await axios.post(
+          `${import.meta.env.VITE_BASE_URL}/auth/login`,
+          qs.stringify({
+        username: email,
+        password: password
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      }
+          )
+
+          // console.log(response.ok())
+        const result = response.data
+        console.log(result)
         
         // Handle remember me
         if (rememberMe) {
           localStorage.setItem('savedEmail', email);
-          localStorage.setItem('savedPassword', password);
+          localStorage.setItem("token",result.access_token)
+          localStorage.setItem("role",result.role)
         } else {
           localStorage.removeItem('savedEmail');
           localStorage.removeItem('savedPassword');
