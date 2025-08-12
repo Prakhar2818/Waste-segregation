@@ -1,15 +1,12 @@
-// Signup.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import EcoLogo from "../assets/eco-worth.png";
-import { authUtils } from '../utils/auth';
+import axios from 'axios';
 
 export default function Signup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -29,52 +26,42 @@ export default function Signup() {
     try {
       if (!formData.agree) {
         alert("You must agree to the Terms");
+        setIsLoading(false);
         return;
       }
       if (formData.password !== formData.confirmPassword) {
         alert("Passwords do not match");
+        setIsLoading(false);
         return;
       }
       if (formData.password.length < 6) {
         alert("Password must be at least 6 characters long");
+        setIsLoading(false);
         return;
       }
 
-      // Check if email already exists
-      if (authUtils.isEmailRegistered(formData.email)) {
-        alert("Email already registered. Please use a different email.");
-        return;
-      }
-
-      
-
-      // Create new user
-      const newUser = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      const signupData = {
         email: formData.email,
         password: formData.password,
-        role: 'user'
+        role: 'seller'
       };
 
-      // Save to registered users
-      const registeredUsers = authUtils.getRegisteredUsers();
-      const updatedUsers = [...registeredUsers, newUser];
-      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/register`, signupData);
 
-      // Auto login the new user
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('authToken', `token_${Date.now()}`);
-      localStorage.setItem('user', JSON.stringify(newUser));
+      console.log("Signup response:", response.data);
 
-      alert("Account created successfully!");
-      
-      // Redirect to seller dashboard
-      navigate('/seller-dashboard');
-      
+      if (response.data && (response.data.success === true || response.status === 200)) {
+        navigate('/seller-dashboard');
+      } else {
+        alert(response.data.message || "Signup failed. Please try again.");
+      }
     } catch (error) {
       console.error('Signup error:', error);
-      alert('Registration failed. Please try again.');
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +70,6 @@ export default function Signup() {
   return (
     <div className="container-fluid vh-100">
       <div className="row h-100">
-
         {/* Left - Signup Form */}
         <div className="col-md-6 d-flex align-items-center justify-content-center">
           <div style={{ width: '100%', maxWidth: '400px' }}>
@@ -109,39 +95,6 @@ export default function Signup() {
             </div>
 
             <form onSubmit={handleSignup}>
-              {/* First & Last Name */}
-              <div className="row">
-                <div className="col">
-                  <div className="mb-3">
-                    <input
-                      type="text"
-                      name="firstName"
-                      className="form-control"
-                      placeholder="First name"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                      disabled={isLoading}
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </div>
-                </div>
-                <div className="col">
-                  <div className="mb-3">
-                    <input
-                      type="text"
-                      name="lastName"
-                      className="form-control"
-                      placeholder="Last name"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
-                      disabled={isLoading}
-                      style={{ borderRadius: '8px' }}
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Email */}
               <div className="mb-3">
