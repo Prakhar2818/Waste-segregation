@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import SellerDashboard from './pages/SellerDashboard';
 import SellerListingPage from './pages/SellerListingPage';
 import './App.css';
+import HomePage from './pages/HomePage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
           <Route path="/seller-listing" element={<SellerListingPage />} />
+          <Route path="/home" element={<HomePage />} />
         </Routes>
       </div>
     </Router>

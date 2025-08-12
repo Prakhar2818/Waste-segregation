@@ -28,46 +28,50 @@ export default function Login() {
 
     try {
       const rememberMe = document.getElementById('rememberMe').checked;
-      
+
       // Get default credentials and registered users
       const defaultCredentials = authUtils.getDefaultCredentials();
       const registeredUsers = authUtils.getRegisteredUsers();
       const allUsers = [...defaultCredentials, ...registeredUsers];
-      
+
       // Find user with matching credentials
       // const user = allUsers.find(u => u.email === email && u.password === password);
-      
+
       // console.log(email,password)
       if (email && password) {
-       const response = await axios.post(
+        const response = await axios.post(
           `${import.meta.env.VITE_BASE_URL}/auth/login`,
           qs.stringify({
-        username: email,
-        password: password
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        }
-      }
-          )
+            username: email,
+            password: password
+          }),
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            }
+          }
+        )
 
-          // console.log(response.ok())
+        // console.log(response.ok())
         const result = response.data
         console.log(result)
-        
+
         // Handle remember me
         if (rememberMe) {
           localStorage.setItem('savedEmail', email);
-          localStorage.setItem("token",result.access_token)
-          localStorage.setItem("role",result.role)
+          localStorage.setItem("token", result.access_token)
+          localStorage.setItem("role", result.role)
         } else {
           localStorage.removeItem('savedEmail');
           localStorage.removeItem('savedPassword');
         }
-        
+
         // Redirect to seller dashboard
-        navigate('/seller-dashboard');
+        if (result.role === 'buyer') {
+          navigate('/home');
+        } else {
+          navigate('/seller-dashboard');
+        }
       } else {
         alert('Invalid email or password. Please try again.');
       }
@@ -150,8 +154,8 @@ export default function Login() {
                 <Link to="#" className="text-primary text-decoration-none">Forgot password</Link>
               </div>
 
-              <button 
-                className="btn btn-primary w-100 mb-3" 
+              <button
+                className="btn btn-primary w-100 mb-3"
                 type="submit"
                 disabled={isLoading}
               >
@@ -164,7 +168,7 @@ export default function Login() {
                   'Log in'
                 )}
               </button>
-              
+
               <p className="text-muted">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-primary text-decoration-none">Sign up now</Link>
@@ -174,8 +178,8 @@ export default function Login() {
             {/* Demo Credentials Info */}
             <div className="mt-4 p-3 bg-light rounded">
               <small className="text-muted">
-                <strong>Demo Credentials:</strong><br/>
-                Email: admin@waste.com<br/>
+                <strong>Demo Credentials:</strong><br />
+                Email: admin@waste.com<br />
                 Password: admin123
               </small>
             </div>

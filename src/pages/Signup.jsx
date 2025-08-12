@@ -43,7 +43,7 @@ export default function Signup() {
       const signupData = {
         email: formData.email,
         password: formData.password,
-        role: 'seller'
+        role: 'buyer'
       };
 
       const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/register`, signupData);
@@ -51,7 +51,11 @@ export default function Signup() {
       console.log("Signup response:", response.data);
 
       if (response.data && (response.data.success === true || response.status === 200)) {
-        navigate('/seller-dashboard');
+        if (response.data.role === 'buyer') {
+          navigate('/home');
+        } else {
+          navigate('/seller-dashboard');
+        }
       } else {
         alert(response.data.message || "Signup failed. Please try again.");
       }
