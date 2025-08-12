@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Dashboard from './components/Dashboard';
+import SellerDashboard from './pages/SellerDashboard';
+import SellerListingPage from './pages/SellerListingPage';
 import './App.css';
 
 function App() {
@@ -14,7 +15,8 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+          <Route path="/seller-dashboard" element={<SellerDashboard />} />
+          <Route path="/seller-listing" element={<SellerListingPage />} />
         </Routes>
       </div>
     </Router>

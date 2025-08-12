@@ -1,10 +1,12 @@
 // Signup.js
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import EcoLogo from "../assets/eco-worth.png";
+import { authUtils } from '../utils/auth';
 
 export default function Signup() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -13,23 +15,67 @@ export default function Signup() {
     confirmPassword: '',
     agree: false
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    if (!formData.agree) {
-      alert("You must agree to the Terms");
-      return;
+    setIsLoading(true);
+
+    try {
+      if (!formData.agree) {
+        alert("You must agree to the Terms");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        alert("Passwords do not match");
+        return;
+      }
+      if (formData.password.length < 6) {
+        alert("Password must be at least 6 characters long");
+        return;
+      }
+
+      // Check if email already exists
+      if (authUtils.isEmailRegistered(formData.email)) {
+        alert("Email already registered. Please use a different email.");
+        return;
+      }
+
+      // Create new user
+      const newUser = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: 'user'
+      };
+
+      // Save to registered users
+      const registeredUsers = authUtils.getRegisteredUsers();
+      const updatedUsers = [...registeredUsers, newUser];
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+
+      // Auto login the new user
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('authToken', `token_${Date.now()}`);
+      localStorage.setItem('user', JSON.stringify(newUser));
+
+      alert("Account created successfully!");
+      
+      // Redirect to seller dashboard
+      navigate('/seller-dashboard');
+      
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    alert("Account created successfully (dummy)");
   };
 
   return (
@@ -73,6 +119,7 @@ export default function Signup() {
                       value={formData.firstName}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                       style={{ borderRadius: '8px' }}
                     />
                   </div>
@@ -87,6 +134,7 @@ export default function Signup() {
                       value={formData.lastName}
                       onChange={handleChange}
                       required
+                      disabled={isLoading}
                       style={{ borderRadius: '8px' }}
                     />
                   </div>
@@ -103,6 +151,7 @@ export default function Signup() {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   style={{ borderRadius: '8px' }}
                 />
               </div>
@@ -117,6 +166,7 @@ export default function Signup() {
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   style={{ borderRadius: '8px' }}
                 />
               </div>
@@ -132,6 +182,7 @@ export default function Signup() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                   style={{ borderRadius: '8px' }}
                 />
               </div>
@@ -145,6 +196,7 @@ export default function Signup() {
                   name="agree"
                   checked={formData.agree}
                   onChange={handleChange}
+                  disabled={isLoading}
                 />
                 <label className="form-check-label" htmlFor="agree">
                   I agree to the <Link to="#" className="text-primary text-decoration-none">Terms</Link>
@@ -155,6 +207,7 @@ export default function Signup() {
               <button
                 type="submit"
                 className="btn w-100 mb-3"
+                disabled={isLoading}
                 style={{
                   background: 'linear-gradient(90deg, #00c853, #00e676)',
                   color: 'white',
@@ -162,7 +215,14 @@ export default function Signup() {
                   fontWeight: 'bold'
                 }}
               >
-                👤+ Create Account
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Creating Account...
+                  </>
+                ) : (
+                  <>👤+ Create Account</>
+                )}
               </button>
 
               {/* Divider */}

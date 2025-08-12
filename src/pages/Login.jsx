@@ -1,12 +1,15 @@
 // Login.js
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import EcoLogo from "../assets/eco-worth.png";
+import { authUtils } from '../utils/auth';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('savedEmail');
@@ -17,17 +20,47 @@ export default function Login() {
     }
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const rememberMe = document.getElementById('rememberMe').checked;
-    if (rememberMe) {
-      localStorage.setItem('savedEmail', email);
-      localStorage.setItem('savedPassword', password);
-    } else {
-      localStorage.removeItem('savedEmail');
-      localStorage.removeItem('savedPassword');
+    setIsLoading(true);
+
+    try {
+      const rememberMe = document.getElementById('rememberMe').checked;
+      
+      // Get default credentials and registered users
+      const defaultCredentials = authUtils.getDefaultCredentials();
+      const registeredUsers = authUtils.getRegisteredUsers();
+      const allUsers = [...defaultCredentials, ...registeredUsers];
+      
+      // Find user with matching credentials
+      const user = allUsers.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        // Save authentication state
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('authToken', `token_${Date.now()}`);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Handle remember me
+        if (rememberMe) {
+          localStorage.setItem('savedEmail', email);
+          localStorage.setItem('savedPassword', password);
+        } else {
+          localStorage.removeItem('savedEmail');
+          localStorage.removeItem('savedPassword');
+        }
+        
+        // Redirect to seller dashboard
+        navigate('/seller-dashboard');
+      } else {
+        alert('Invalid email or password. Please try again.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    alert('Login successful (dummy)');
   };
 
   return (
@@ -59,6 +92,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="mb-3 position-relative">
@@ -69,6 +103,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
                 <span
                   style={{
@@ -90,6 +125,7 @@ export default function Login() {
                     type="checkbox"
                     id="rememberMe"
                     defaultChecked={!!localStorage.getItem('savedEmail')}
+                    disabled={isLoading}
                   />
                   <label className="form-check-label" htmlFor="rememberMe">
                     Remember me
@@ -98,14 +134,35 @@ export default function Login() {
                 <Link to="#" className="text-primary text-decoration-none">Forgot password</Link>
               </div>
 
-              <button className="btn btn-primary w-100 mb-3" type="submit">
-                Log in
+              <button 
+                className="btn btn-primary w-100 mb-3" 
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Logging in...
+                  </>
+                ) : (
+                  'Log in'
+                )}
               </button>
+              
               <p className="text-muted">
-                Don’t have an account?{' '}
+                Don't have an account?{' '}
                 <Link to="/signup" className="text-primary text-decoration-none">Sign up now</Link>
               </p>
             </form>
+
+            {/* Demo Credentials Info */}
+            <div className="mt-4 p-3 bg-light rounded">
+              <small className="text-muted">
+                <strong>Demo Credentials:</strong><br/>
+                Email: admin@waste.com<br/>
+                Password: admin123
+              </small>
+            </div>
           </div>
         </div>
 
