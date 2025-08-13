@@ -14,14 +14,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const [staticData, setStaticData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
 
   useEffect(() => {
     const fetchWeightsData = async () => {
@@ -32,8 +30,7 @@ export default function Dashboard() {
           `${import.meta.env.VITE_BASE_URL}/weights`,
           {
             headers: {
-              Authorization:
-                `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
               "Content-Type": "application/json",
             },
           }
@@ -53,7 +50,6 @@ export default function Dashboard() {
     fetchWeightsData();
   }, []);
 
-
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -68,13 +64,13 @@ export default function Dashboard() {
 
   const handleListClick = (category) => {
     // Find the item data for this category
-    const itemData = staticData.find(item => item.category === category);
+    const itemData = staticData.find((item) => item.category === category);
 
     setSelectedItem({
       category,
       quantity: itemData?.quantity || 0,
       pricePerKg: 50,
-      location: city || "Mumbai"
+      location: city || "Mumbai",
     });
 
     setFormData({
@@ -91,7 +87,7 @@ export default function Dashboard() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -101,7 +97,7 @@ export default function Dashboard() {
       ...formData,
       datePosted: new Date().toISOString(),
       seller: "Current User",
-      status: "available"
+      status: "available",
     };
 
     // Save to localStorage
@@ -114,8 +110,8 @@ export default function Dashboard() {
     // Navigate to listing page to show all listings
     navigate("/seller-listing", {
       state: {
-        category: selectedItem.category
-      }
+        category: selectedItem.category,
+      },
     });
   };
 
@@ -194,14 +190,16 @@ export default function Dashboard() {
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center">
                     <img src={Logo} alt="EcoWorth Logo" height={80} />
-                    <h1 className="display-6 fw-bold text-white mb-0">Waste Dashboard</h1>
+                    <h1 className="display-6 fw-bold text-white mb-0">
+                      Waste Dashboard
+                    </h1>
                   </div>
                   <button
                     onClick={() => {
-                      localStorage.removeItem('isAuthenticated');
-                      localStorage.removeItem('authToken');
-                      localStorage.removeItem('user');
-                      navigate('/login');
+                      localStorage.removeItem("isAuthenticated");
+                      localStorage.removeItem("authToken");
+                      localStorage.removeItem("user");
+                      navigate("/login");
                     }}
                     className="btn btn-danger rounded-3"
                   >
@@ -220,13 +218,15 @@ export default function Dashboard() {
               <div className="card glass-card border-0 shadow-lg rounded-4">
                 <div className="card-body p-4">
                   <h4 className="card-title fw-bold text-dark mb-4">
-                    <i className="bi bi-funnel me-2 text-primary"></i>Filter Options
+                    <i className="bi bi-funnel me-2 text-primary"></i>Filter
+                    Options
                   </h4>
                   <div className="row g-4">
                     {/* State Dropdown */}
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-geo-alt me-2 text-primary"></i>Select State
+                        <i className="bi bi-geo-alt me-2 text-primary"></i>
+                        Select State
                       </label>
                       <select
                         value={selectedState}
@@ -245,7 +245,8 @@ export default function Dashboard() {
                     {/* City Dropdown */}
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-building me-2 text-primary"></i>Select City
+                        <i className="bi bi-building me-2 text-primary"></i>
+                        Select City
                       </label>
                       <select
                         value={city}
@@ -264,7 +265,8 @@ export default function Dashboard() {
                     {/* Category Dropdown */}
                     <div className="col-md-4">
                       <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-tags me-2 text-primary"></i>Select Category
+                        <i className="bi bi-tags me-2 text-primary"></i>Select
+                        Category
                       </label>
                       <select
                         value={selectedCategory}
@@ -272,7 +274,7 @@ export default function Dashboard() {
                         className="form-select form-select-lg rounded-3 border-2"
                         style={{ backgroundColor: "#f8f9fa" }}
                       >
-                        {staticData && staticData.map((item) => (
+                        {staticData.map((item) => (
                           <option key={item.category} value={item.category}>
                             {item.category}
                           </option>
@@ -306,25 +308,39 @@ export default function Dashboard() {
           </div>
 
           {/* Table */}
-          <div style={{
-            background: "#fff",
-            borderRadius: "12px",
-            padding: "20px",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-            marginBottom: "30px"
-          }}>
-            <h3 style={{ marginBottom: "15px", color: "#334155" }}>♻ Waste Quantities</h3>
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "12px",
+              padding: "20px",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+              marginBottom: "30px",
+            }}
+          >
+            <h3 style={{ marginBottom: "15px", color: "#334155" }}>
+              ♻ Waste Quantities
+            </h3>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f1f5f9" }}>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Category</th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Quantity (kg)</th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Category
+                  </th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Quantity (kg)
+                  </th>
                   <th style={{ padding: "12px", textAlign: "left" }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {staticData && staticData.map((item, index) => (
-                  <tr className="w-100" key={item.category} style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                {staticData.map((item, index) => (
+                  <tr
+                    className="w-100"
+                    key={item.category}
+                    style={{
+                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc",
+                    }}
+                  >
                     <td style={{ padding: "12px" }}>{item.category}</td>
                     <td style={{ padding: "12px" }}>{item.weights}</td>
                     <td style={{ padding: "12px" }}>
@@ -343,7 +359,10 @@ export default function Dashboard() {
 
           {/* Modal */}
           {showModal && (
-            <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div
+              className="modal fade show d-block"
+              style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            >
               <div className="modal-dialog modal-lg modal-dialog-centered">
                 <div className="modal-content rounded-4 border-0">
                   <div className="modal-header border-0 pb-0">
@@ -361,28 +380,36 @@ export default function Dashboard() {
                     <form onSubmit={handleSubmit}>
                       <div className="row g-3">
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold">Category</label>
+                          <label className="form-label fw-semibold">
+                            Category
+                          </label>
                           <div className="form-control rounded-3 bg-light d-flex align-items-center">
                             <i className="bi bi-tag me-2 text-primary"></i>
                             <strong>{selectedItem?.category}</strong>
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold">Quantity (kg)</label>
+                          <label className="form-label fw-semibold">
+                            Quantity (kg)
+                          </label>
                           <div className="form-control rounded-3 bg-light d-flex align-items-center">
                             <i className="bi bi-box me-2 text-primary"></i>
                             <strong>{selectedItem?.quantity} kg</strong>
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold">Price per kg (₹)</label>
+                          <label className="form-label fw-semibold">
+                            Price per kg (₹)
+                          </label>
                           <div className="form-control rounded-3 bg-light d-flex align-items-center">
                             <i className="bi bi-currency-rupee me-2 text-primary"></i>
                             <strong>₹{selectedItem?.pricePerKg}/kg</strong>
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold">Contact Number</label>
+                          <label className="form-label fw-semibold">
+                            Contact Number
+                          </label>
                           <input
                             type="tel"
                             name="contactNumber"
@@ -394,14 +421,18 @@ export default function Dashboard() {
                           />
                         </div>
                         <div className="col-12">
-                          <label className="form-label fw-semibold">Location</label>
+                          <label className="form-label fw-semibold">
+                            Location
+                          </label>
                           <div className="form-control rounded-3 bg-light d-flex align-items-center">
                             <i className="bi bi-geo-alt me-2 text-primary"></i>
                             <strong>{selectedItem?.location}</strong>
                           </div>
                         </div>
                         <div className="col-12">
-                          <label className="form-label fw-semibold">Description</label>
+                          <label className="form-label fw-semibold">
+                            Description
+                          </label>
                           <textarea
                             name="description"
                             value={formData.description}
@@ -455,16 +486,13 @@ export default function Dashboard() {
                           <Legend />
                           <Bar dataKey="price" fill="#82ca9d" />
                         </>
-                      )
-                      }
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             </div>
           </div>
-
-          
         </div>
       </div>
     </div>
