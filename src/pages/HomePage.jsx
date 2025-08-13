@@ -293,9 +293,9 @@ const StatsBar = ({ listings }) => (
 );
 
 const ListingsGrid = ({ listings }) => (
-  <div className="listings-grid my-5">
-    <div className="row g-4">
-      {listings.map(listing => (<div key={listing.id} className="col-lg-4 col-md-6">
+  <div className="listings-grid my-5 w-100">
+    <div className="row g-4 w-100">
+      {listings.map(listing => (<div key={listing.id} className="col-md-4">
           <div className="card border-0 shadow-sm rounded-3 h-100">
             <div className="card-body p-4">
               <div className="d-flex justify-content-between align-items-start mb-3">

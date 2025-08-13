@@ -4,8 +4,8 @@ const Navbar = () => (
   <header className="header">
     <div className="cu-container d-flex align-items-between justify-content-around" style={{width:"100vw"}}>
       <div className="logo">
-        <span className="logo-icon">♻️</span>
-        <h1>RecycleHub</h1>
+        <span className="logo-icon"><img src="src\assets\logo.png" height={80}></img></span>
+        <h1>EcoWorth</h1>
       </div>
       <nav>
         <ul>
