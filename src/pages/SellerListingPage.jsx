@@ -27,23 +27,23 @@ export default function SellerListingPage() {
               <div className="card-body py-3 px-4">
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center">
-                    <img src={Logo} alt="EcoWorth Logo" height={80} className="me-3" />
+                    <img src={Logo} alt="EcoWorth Logo" height={40} className="me-3" />
                     <div>
-                      <h1 className="display-6 fw-bold text-white mb-0">
-                        Your {category} Listings
-                      </h1>
-                      <p className="text-white-50 mb-0">
-                        Manage your {category} recyclable material listings
+                      <h4 className="fw-bold  mb-0">
+                        Your  Listings
+                      </h4>
+                      <p className=" mb-0">
+                        Manage your recyclable material listings
                       </p>
                     </div>
                   </div>
                   <div className="d-flex gap-2">
-                    <button 
+                    {/* <button 
                       onClick={() => navigate("/seller-dashboard")}
                       className="btn rounded-3"
                     >
-                      <i className="bi bi-arrow-left me-2"></i>Back to Dashboard
-                    </button>
+                      <i className="bi bi-arrow-left me-2"></i>
+                    </button> */}
                     <button
                       onClick={() => {
                         localStorage.removeItem('isAuthenticated');

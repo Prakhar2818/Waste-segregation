@@ -13,30 +13,43 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import "../assets/scss/Dashboard.scss"; // Import the SCSS file
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
+  // State management
   const [staticData, setStaticData] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [formData, setFormData] = useState({
+    category: "",
+    quantity: "",
+    pricePerKg: 0,
+    description: "",
+    state: "",
+    city: "",
+    contactNumber: "",
+  });
 
-  // State and City selection
+  // Filters state
   const [selectedState, setSelectedState] = useState("Maharashtra");
   const [city, setCity] = useState(statesWithCities["Maharashtra"][0] || "");
-
-  // Filters
   const [selectedCategory, setSelectedCategory] = useState("PET");
   const [forecastMonths, setForecastMonths] = useState(3);
-
   const forecastOptions = [3, 6, 9];
 
+  // Data fetching
   useEffect(() => {
-    const fetchWeightsData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
+
+        // Fetch weights data
+        const weightsResponse = await axios.get(
           `${import.meta.env.VITE_BASE_URL}/weights`,
           {
             headers: {
@@ -45,20 +58,10 @@ export default function Dashboard() {
             },
           }
         );
-        setStaticData(response.data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching weights data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+        setStaticData(weightsResponse.data);
 
-    const fetchChartData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(
+        // Fetch chart data
+        const chartResponse = await axios.get(
           `${import.meta.env.VITE_BASE_URL}/predict/price`,
           {
             params: {
@@ -73,59 +76,44 @@ export default function Dashboard() {
           }
         );
 
-        // Transform the data for the chart
-        const transformedData = response.data.map((item) => ({
-          month: `${item.month.substring(0, 3)} ${item.year}`,
-          price: item.price_per_kg,
-          quantity: item.quantity_kg,
-          revenue: item.revenue,
-        }));
+        setChartData(
+          chartResponse.data.map((item) => ({
+            month: `${item.month.substring(0, 3)} ${item.year}`,
+            price: item.price_per_kg,
+            quantity: item.quantity_kg,
+            revenue: item.revenue,
+          }))
+        );
 
-        setChartData(transformedData);
         setError(null);
       } catch (err) {
-        console.error("Error fetching chart data:", err);
+        console.error("Error fetching data:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWeightsData();
-    fetchChartData();
+    fetchData();
   }, [city, selectedCategory, forecastMonths]);
 
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [formData, setFormData] = useState({
-    category: "",
-    quantity: "",
-    pricePerKg: "",
-    description: "",
-    location: "",
-    contactNumber: "",
-  });
-
+  // Handlers
   const handleListClick = (category) => {
     const itemData = staticData.find((item) => item.category === category);
-
     setSelectedItem({
       category,
       quantity: itemData?.weights || 0,
-      pricePerKg: 50,
-      location: city || "Mumbai",
+      pricePerKg: itemData?.pricePerKg,
+      location: city || "NaN",
     });
-
     setFormData({
       category,
       quantity: itemData?.weights || 0,
-      pricePerKg: 50,
+      pricePerKg: 0,
       description: "",
-      location: city || "Mumbai",
+      location: city || "",
       contactNumber: "",
     });
-
     setShowModal(true);
   };
 
@@ -144,214 +132,148 @@ export default function Dashboard() {
       status: "available",
     };
 
-    // Save to localStorage
     const savedListings = localStorage.getItem("wasteListings");
     const listings = savedListings ? JSON.parse(savedListings) : [];
-    const updatedListings = [...listings, newListing];
-    localStorage.setItem("wasteListings", JSON.stringify(updatedListings));
+    localStorage.setItem(
+      "wasteListings",
+      JSON.stringify([...listings, newListing])
+    );
 
     setShowModal(false);
-    navigate("/seller-listing", {
-      state: {
-        category: selectedItem.category,
-      },
-    });
+    navigate("/seller-listing", { state: { category: selectedItem.category } });
   };
 
-  // Handlers
   const handleStateChange = (e) => {
     const newState = e.target.value;
     setSelectedState(newState);
-    const firstCity = statesWithCities[newState]?.[0] || "";
-    setCity(firstCity);
+    setCity(statesWithCities[newState]?.[0] || "");
   };
 
-  const handleCityChange = (e) => setCity(e.target.value);
-  const handleCategoryChange = (e) => setSelectedCategory(e.target.value);
-  const handleMonthsChange = (e) => setForecastMonths(Number(e.target.value));
-
   return (
-    <div
-      className="min-vh-100 auth-background"
-      style={{ fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' }}
-    >
-      <div className="container-fluid p-0">
-        {/* Header with Logo */}
-        <div className="row g-0 m-0">
-          <div className="col-12">
-            <div className="glass-card border-0 rounded-0 shadow-sm">
-              <div className="card-body py-3 px-4">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center">
-                    <img src={Logo} alt="EcoWorth Logo" height={80} />
-                    <h1 className="display-6 fw-bold mb-0">
-                      Waste Dashboard
-                    </h1>
-                  </div>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("isAuthenticated");
-                      localStorage.removeItem("authToken");
-                      localStorage.removeItem("user");
-                      navigate("/login");
-                    }}
-                    className="btn btn-danger rounded-3"
-                  >
-                    <i className="bi bi-box-arrow-right me-2"></i>Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="dashboard-container">
+      {/* Header */}
+      <header className="dashboard-header">
+        <div className="header-content">
+          <img src={Logo} alt="EcoWorth Logo" className="logo" />
+          <h1>Waste Dashboard</h1>
         </div>
+        <button
+          className="logout-btn"
+          onClick={() => {
+            localStorage.removeItem("isAuthenticated");
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("user");
+            navigate("/login");
+          }}
+        >
+          <i className="bi bi-box-arrow-right"></i> Logout
+        </button>
+      </header>
 
-        {/* Filters */}
-        <div className="container-fluid py-4">
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="card glass-card border-0 shadow-lg rounded-4">
-                <div className="card-body p-4">
-                  <h4 className="card-title fw-bold text-dark mb-4">
-                    <i className="bi bi-funnel me-2 text-primary"></i>Filter
-                    Options
-                  </h4>
-                  <div className="row g-4">
-                    {/* State Dropdown */}
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-geo-alt me-2 text-primary"></i>
-                        Select State
-                      </label>
-                      <select
-                        value={selectedState}
-                        onChange={handleStateChange}
-                        className="form-select form-select-lg rounded-3 border-2"
-                        style={{ backgroundColor: "#f8f9fa" }}
-                      >
-                        {Object.keys(statesWithCities).map((state) => (
-                          <option key={state} value={state}>
-                            {state}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+      {/* Main Content */}
+      <main className="dashboard-main">
+        {/* Filters Section */}
+        <section className="filters-section">
+          <h2>
+            <i className="bi bi-funnel"></i> Filter Options
+          </h2>
+          <div className="filter-grid">
+            {/* State Filter */}
+            <div className="filter-group">
+              <label>
+                <i className="bi bi-geo-alt"></i> Select State
+              </label>
+              <select value={selectedState} onChange={handleStateChange}>
+                {Object.keys(statesWithCities).map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                    {/* City Dropdown */}
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-building me-2 text-primary"></i>
-                        Select City
-                      </label>
-                      <select
-                        value={city}
-                        onChange={handleCityChange}
-                        className="form-select form-select-lg rounded-3 border-2"
-                        style={{ backgroundColor: "#f8f9fa" }}
-                      >
-                        {statesWithCities[selectedState]?.map((ct) => (
-                          <option key={ct} value={ct}>
-                            {ct}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+            {/* City Filter */}
+            <div className="filter-group">
+              <label>
+                <i className="bi bi-building"></i> Select City
+              </label>
+              <select value={city} onChange={(e) => setCity(e.target.value)}>
+                {statesWithCities[selectedState]?.map((ct) => (
+                  <option key={ct} value={ct}>
+                    {ct}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                    {/* Category Dropdown */}
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-tags me-2 text-primary"></i>Select
-                        Category
-                      </label>
-                      <select
-                        value={selectedCategory}
-                        onChange={handleCategoryChange}
-                        className="form-select form-select-lg rounded-3 border-2"
-                        style={{ backgroundColor: "#f8f9fa" }}
-                      >
-                        {staticData.map((item) => (
-                          <option key={item.category} value={item.category}>
-                            {item.category}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+            {/* Category Filter */}
+            <div className="filter-group">
+              <label>
+                <i className="bi bi-tags"></i> Select Category
+              </label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                {staticData.map((item) => (
+                  <option key={item.category} value={item.category}>
+                    {item.category}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                    {/* Forecast Months */}
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold text-dark mb-2">
-                        <i className="bi bi-calendar-range me-2 text-primary"></i>
-                        Forecast Months
-                      </label>
-                      <select
-                        value={forecastMonths}
-                        onChange={handleMonthsChange}
-                        className="form-select form-select-lg rounded-3 border-2"
-                        style={{ backgroundColor: "#f8f9fa" }}
-                      >
-                        {forecastOptions.map((m) => (
-                          <option key={m} value={m}>
-                            {m} months
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Forecast Months */}
+            <div className="filter-group">
+              <label>
+                <i className="bi bi-calendar-range"></i> Forecast Months
+              </label>
+              <select
+                value={forecastMonths}
+                onChange={(e) => setForecastMonths(Number(e.target.value))}
+              >
+                {forecastOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m} months
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
+        </section>
 
-          {/* Table */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "12px",
-              padding: "20px",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-              marginBottom: "30px",
-            }}
-          >
-            <h3 style={{ marginBottom: "15px", color: "#334155" }}>
-              ♻ Waste Quantities
-            </h3>
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="alert alert-danger">{error}</div>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        {/* Waste Quantities Table */}
+        <section className="data-section">
+          <h2>
+            <i className="bi bi-recycle"></i> Waste Quantities
+          </h2>
+          {loading ? (
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+            </div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : (
+            <div className="table-container">
+              <table>
                 <thead>
-                  <tr style={{ backgroundColor: "#f1f5f9" }}>
-                    <th style={{ padding: "12px", textAlign: "left" }}>
-                      Category
-                    </th>
-                    <th style={{ padding: "12px", textAlign: "left" }}>
-                      Quantity (kg)
-                    </th>
-                    <th style={{ padding: "12px", textAlign: "left" }}>
-                      Action
-                    </th>
+                  <tr>
+                    <th>Category</th>
+                    <th>Quantity (kg)</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {staticData.map((item, index) => (
                     <tr
-                      className="w-100"
                       key={item.category}
-                      style={{
-                        backgroundColor:
-                          index % 2 === 0 ? "#ffffff" : "#f8fafc",
-                      }}
+                      className={index % 2 === 0 ? "even" : "odd"}
                     >
-                      <td style={{ padding: "12px" }}>{item.category}</td>
-                      <td style={{ padding: "12px" }}>{item.weights}</td>
-                      <td style={{ padding: "12px" }}>
+                      <td>{item.category}</td>
+                      <td>{item.weights}</td>
+                      <td>
                         <button
-                          className="btn btn-success"
+                          className="list-btn"
                           onClick={() => handleListClick(item.category)}
                         >
                           List
@@ -361,180 +283,192 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
-
-          {/* Modal */}
-          {showModal && (
-            <div
-              className="modal fade show d-block"
-              style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-            >
-              <div className="modal-dialog modal-lg modal-dialog-centered">
-                <div className="modal-content rounded-4 border-0">
-                  <div className="modal-header border-0 pb-0">
-                    <h5 className="modal-title fw-bold">
-                      <i className="bi bi-file-plus me-2 text-primary"></i>
-                      Create New {selectedItem?.category} Listing
-                    </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      onClick={() => setShowModal(false)}
-                    ></button>
-                  </div>
-                  <div className="modal-body p-4">
-                    <form onSubmit={handleSubmit}>
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">
-                            Category
-                          </label>
-                          <div className="form-control rounded-3 bg-light d-flex align-items-center">
-                            <i className="bi bi-tag me-2 text-primary"></i>
-                            <strong>{selectedItem?.category}</strong>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">
-                            Quantity (kg)
-                          </label>
-                          <div className="form-control rounded-3 bg-light d-flex align-items-center">
-                            <i className="bi bi-box me-2 text-primary"></i>
-                            <strong>{selectedItem?.quantity} kg</strong>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">
-                            Price per kg (₹)
-                          </label>
-                          <div className="form-control rounded-3 bg-light d-flex align-items-center">
-                            <i className="bi bi-currency-rupee me-2 text-primary"></i>
-                            <strong>₹{selectedItem?.pricePerKg}/kg</strong>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label fw-semibold">
-                            Contact Number
-                          </label>
-                          <input
-                            type="tel"
-                            name="contactNumber"
-                            value={formData.contactNumber}
-                            onChange={handleInputChange}
-                            className="form-control rounded-3"
-                            required
-                            placeholder="Enter your contact number"
-                          />
-                        </div>
-                        <div className="col-12">
-                          <label className="form-label fw-semibold">
-                            Location
-                          </label>
-                          <div className="form-control rounded-3 bg-light d-flex align-items-center">
-                            <i className="bi bi-geo-alt me-2 text-primary"></i>
-                            <strong>{selectedItem?.location}</strong>
-                          </div>
-                        </div>
-                        <div className="col-12">
-                          <label className="form-label fw-semibold">
-                            Description
-                          </label>
-                          <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            className="form-control rounded-3"
-                            rows="3"
-                            placeholder="Additional details about the waste material..."
-                          />
-                        </div>
-                      </div>
-                      <div className="d-flex justify-content-end gap-2 mt-4">
-                        <button
-                          type="button"
-                          onClick={() => setShowModal(false)}
-                          className="btn btn-outline-secondary rounded-3"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="btn btn-success rounded-3"
-                        >
-                          <i className="bi bi-plus-circle me-2"></i>
-                          Create Listing
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
+        </section>
 
-          {/* Chart Section */}
-          <div className="row">
-            <div className="col-12">
-              <div className="card glass-card border-0 shadow-lg rounded-4">
-                <div className="card-body p-4">
-                  <h4 className="card-title fw-bold text-dark mb-4">
-                    <i className="bi bi-graph-up-arrow me-2 text-success"></i>
-                    Price Forecast for {selectedCategory} in {city}
-                  </h4>
-                  {loading ? (
-                    <div className="text-center py-4">
-                      <div
-                        className="spinner-border text-primary"
-                        role="status"
-                      >
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
+        {/* Price Forecast Chart */}
+        <section className="chart-section">
+          <h2>
+            <i className="bi bi-graph-up-arrow"></i> Price Forecast for{" "}
+            {selectedCategory} in {city}
+          </h2>
+          {loading ? (
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+            </div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : (
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="month"
+                    label={{
+                      value: "Month",
+                      position: "insideBottom",
+                      offset: -5,
+                    }}
+                  />
+                  <YAxis
+                    label={{
+                      value: "Price (₹/kg)",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      `₹${value.toFixed(2)}`,
+                      "Price per kg",
+                    ]}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="price"
+                    name="Price per kg (₹)"
+                    fill="#4CAF50"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Listing Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                <i className="bi bi-file-plus"></i> Create New{" "}
+                {selectedItem?.category} Listing
+              </h3>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleSubmit}>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Category</label>
+                    <div className="readonly-field">
+                      <i className="bi bi-tag"></i>
+                      <span>{selectedItem?.category}</span>
                     </div>
-                  ) : error ? (
-                    <div className="alert alert-danger">{error}</div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="month"
-                          label={{
-                            value: "Month",
-                            position: "insideBottom",
-                            offset: -5,
-                          }}
-                        />
-                        <YAxis
-                          label={{
-                            value: "Price (₹/kg)",
-                            angle: -90,
-                            position: "insideLeft",
-                          }}
-                        />
-                        <Tooltip
-                          formatter={(value) => [
-                            `₹${value.toFixed(2)}`,
-                            "Price per kg",
-                          ]}
-                          labelFormatter={(label) => `Month: ${label}`}
-                        />
-                        <Legend />
-                        <Bar
-                          dataKey="price"
-                          name="Price per kg (₹)"
-                          fill="#4CAF50"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Quantity (kg)</label>
+                    <div className="readonly-field">
+                      <i className="bi bi-box"></i>
+                      <span>{selectedItem?.quantity} kg</span>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Price per kg (₹)</label>
+                    <input
+                      type="number"
+                      name="pricePerKg"
+                      value={formData.pricePerKg}
+                      onChange={handleInputChange}
+                      maxLength={10}
+                      required
+                      placeholder="Enter contact number"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Contact Number</label>
+                    <input
+                      type="tel"
+                      name="contactNumber"
+                      value={formData.contactNumber}
+                      onChange={handleInputChange}
+                      maxLength={10}
+                      required
+                      placeholder="Enter contact number"
+                    />
+                  </div>
+
+                  <div className="filter-grid">
+                    <div className="filter-group">
+                      <label>
+                        <i className="bi bi-geo-alt"></i> Select State
+                      </label>
+                      <select
+                        name="state" // Add name attribute
+                        value={formData.state || selectedState} // Use formData.state with fallback
+                        onChange={handleInputChange}
+                      >
+                        {Object.keys(statesWithCities).map((state) => (
+                          <option key={state} value={state}>
+                            {" "}
+                            {/* Use state as value */}
+                            {state}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="filter-group">
+                      <label>
+                        <i className="bi bi-building"></i> Select City
+                      </label>
+                      <select
+                        name="city" // Add name attribute
+                        value={formData.city || city} // Use formData.city with fallback
+                        onChange={handleInputChange}
+                      >
+                        {statesWithCities[formData.state || selectedState]?.map(
+                          (ct) => (
+                            <option key={ct} value={ct}>
+                              {" "}
+                              {/* Use ct as value */}
+                              {ct}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label>Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows="3"
+                      placeholder="Additional details..."
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    <i className="bi bi-plus-circle"></i> Create Listing
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
