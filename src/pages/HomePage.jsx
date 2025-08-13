@@ -1,20 +1,36 @@
 import React, { useState, useEffect } from "react";
 import "../assets/scss/style.scss";
-import { mockData } from "../assets/ConstantData";
 import Navbar from "../components/Navbar";
 import ListingCard from "../components/ListingCard";
 import Footer from "../components/Footer";
+import { mockData } from "../assets/ConstantData";
 
 const HomePage = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    category: "PET",
+    quantity: "",
+    pricePerKg: "",
+    description: "",
+    state: "",
+    city: "",
+    contactNumber: "",
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 800));
-      setListings(mockData);
+
+      // LocalStorage se saved listings
+      const savedListings = localStorage.getItem("wasteListings");
+      const parsedListings = savedListings ? JSON.parse(savedListings) : [];
+
+      // Mock data + localStorage merge
+      setListings([...parsedListings]);
       setIsLoading(false);
     };
     fetchData();
@@ -25,10 +41,46 @@ const HomePage = () => {
       ? listings
       : listings.filter((item) => item.category === activeCategory);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateListing = (e) => {
+    e.preventDefault();
+    const newListing = {
+      id: Date.now(),
+      ...formData,
+    };
+
+    // State update
+    setListings((prev) => [newListing, ...prev]);
+
+    // LocalStorage update
+    const savedListings = localStorage.getItem("wasteListings");
+    const prevListings = savedListings ? JSON.parse(savedListings) : [];
+    localStorage.setItem(
+      "wasteListings",
+      JSON.stringify([newListing, ...prevListings])
+    );
+
+    // Modal close & form reset
+    setShowModal(false);
+    setFormData({
+      category: "PET",
+      quantity: "",
+      pricePerKg: "",
+      description: "",
+      state: "",
+      city: "",
+      contactNumber: "",
+    });
+  };
+
   return (
     <div className="recycle-app">
       <Navbar />
-      <HeroSection />
+      <HeroSection openModal={() => setShowModal(true)} />
 
       <div className="container">
         <CategoryFilter
@@ -51,11 +103,115 @@ const HomePage = () => {
 
       <HowItWorks />
       <Footer />
+
+      {/* Create Listing Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Create New Listing</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <form className="modal-body" onSubmit={handleCreateListing}>
+              <div className="form-group">
+                <label>Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                >
+                  <option value="PET">PET</option>
+                  <option value="HDPE">HDPE</option>
+                  <option value="LDPE">LDPE</option>
+                  <option value="PVC">PVC</option>
+                  <option value="PE">PE</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Quantity (kg)</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Price per kg (₹)</label>
+                <input
+                  type="number"
+                  name="pricePerKg"
+                  value={formData.pricePerKg}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>State</label>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Contact Number</label>
+                <input
+                  type="tel"
+                  name="contactNumber"
+                  value={formData.contactNumber}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-submit">
+                  Create Listing
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const HeroSection = () => (
+const HeroSection = ({ openModal }) => (
   <section className="hero">
     <div className="container">
       <div className="hero-content">
@@ -65,7 +221,10 @@ const HeroSection = () => (
           quality recycled plastics
         </p>
         <div className="hero-buttons">
-          <button className="btn-primary px-3 p-2 border border-0 rounded-5">
+          <button
+            className="btn-primary px-3 p-2 border border-0 rounded-5"
+            onClick={openModal}
+          >
             List Your Materials
           </button>
           <button className="btn-secondary px-3 p-2 border border-0 rounded-5">
@@ -78,11 +237,6 @@ const HeroSection = () => (
           <span className="mx-2">✓ Sustainable Partners</span>
         </div>
       </div>
-      <div className="hero-image" >
-        <div className="ai-chip">
-          <span className="ai-icon">⚡</span> Smart Matching Algorithm
-        </div>
-      </div>
     </div>
   </section>
 );
@@ -90,11 +244,11 @@ const HeroSection = () => (
 const CategoryFilter = ({ activeCategory, setActiveCategory }) => {
   const categories = [
     { id: "all", name: "All Plastics" },
-    { id: "pet", name: "PET" },
-    { id: "hdpe", name: "HDPE" },
-    { id: "ldpe", name: "LDPE" },
-    { id: "pvc", name: "PVC" },
-    { id: "pe", name: "PE" },
+    { id: "PET", name: "PET" },
+    { id: "HDPE", name: "HDPE" },
+    { id: "LDPE", name: "LDPE" },
+    { id: "PVC", name: "PVC" },
+    { id: "PE", name: "PE" },
   ];
 
   return (
@@ -153,7 +307,6 @@ const ListingsGrid = ({ listings }) => (
   </div>
 );
 
-
 const HowItWorks = () => (
   <section className="how-it-works">
     <div className="container">
@@ -177,8 +330,8 @@ const HowItWorks = () => (
           <div className="step-content">
             <h3>Smart Matching</h3>
             <p>
-              Advanced algorithms connect you with verified buyers who need your
-              specific materials
+              Advanced algorithms connect you with verified buyers who need
+              your specific materials
             </p>
           </div>
         </div>
@@ -196,7 +349,5 @@ const HowItWorks = () => (
     </div>
   </section>
 );
-
-
 
 export default HomePage;

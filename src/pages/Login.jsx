@@ -174,15 +174,6 @@ export default function Login() {
                 <Link to="/signup" className="text-primary text-decoration-none">Sign up now</Link>
               </p>
             </form>
-
-            {/* Demo Credentials Info */}
-            <div className="mt-4 p-3 bg-light rounded">
-              <small className="text-muted">
-                <strong>Demo Credentials:</strong><br />
-                Email: admin@waste.com<br />
-                Password: admin123
-              </small>
-            </div>
           </div>
         </div>
 

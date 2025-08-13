@@ -122,6 +122,7 @@ export default function Dashboard() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // handleSubmit
   const handleSubmit = (e) => {
     e.preventDefault();
     const newListing = {
@@ -132,16 +133,21 @@ export default function Dashboard() {
       status: "available",
     };
 
+    // Save to localStorage
     const savedListings = localStorage.getItem("wasteListings");
     const listings = savedListings ? JSON.parse(savedListings) : [];
-    localStorage.setItem(
-      "wasteListings",
-      JSON.stringify([...listings, newListing])
-    );
+    const updatedListings = [...listings, newListing];
+    localStorage.setItem("wasteListings", JSON.stringify(updatedListings));
+
+    // ✅ Update state to trigger re-render on Dashboard/Homepage if needed
+    setStaticData((prev) => [...prev, newListing]);
 
     setShowModal(false);
-    navigate("/seller-listing", { state: { category: selectedItem.category } });
+    navigate("/seller-listing", {
+      state: { category: selectedItem.category },
+    });
   };
+
 
   const handleStateChange = (e) => {
     const newState = e.target.value;
