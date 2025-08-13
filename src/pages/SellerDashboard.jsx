@@ -272,7 +272,7 @@ export default function Dashboard() {
                         className="form-select form-select-lg rounded-3 border-2"
                         style={{ backgroundColor: "#f8f9fa" }}
                       >
-                        {staticData.map((item) => (
+                        {staticData && staticData.map((item) => (
                           <option key={item.category} value={item.category}>
                             {item.category}
                           </option>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {staticData.map((item, index) => (
+                {staticData && staticData.map((item, index) => (
                   <tr className="w-100" key={item.category} style={{ backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
                     <td style={{ padding: "12px" }}>{item.category}</td>
                     <td style={{ padding: "12px" }}>{item.weights}</td>
