@@ -97,6 +97,58 @@ export default function Dashboard() {
     fetchData();
   }, [city, selectedCategory, forecastMonths]);
 
+
+  const handleListing = async (e) => {
+    e.preventDefault();
+
+    try {
+      setLoading(true); // optional, show loader
+
+      // Prepare payload
+      const payload = {
+        category: formData.category,
+        quantity: `${formData.quantity}kg`, // append kg
+        price: `₹${formData.pricePerKg}/kg`, // format price
+        state: formData.state || selectedState,
+        city: formData.city || city,
+        contactNo: formData.contactNumber,
+        description: formData.description,
+      };
+
+      // Make API POST request
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/listings/add`, // Your endpoint
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        alert("Listing created successfully!");
+
+        // Update state if you want to reflect new listing immediately
+        setStaticData((prev) => [...prev, response.data]);
+
+        // Close modal
+        setShowModal(false);
+
+        // Navigate to seller listing page
+        navigate("/seller-listing", {
+          state: { category: selectedItem.category },
+        });
+      }
+    } catch (err) {
+      console.error("Error creating listing:", err);
+      setError(err.response?.data?.message || err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handlers
   const handleListClick = (category) => {
     const itemData = staticData.find((item) => item.category === category);
@@ -466,7 +518,7 @@ export default function Dashboard() {
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="submit-btn">
+                  <button type="button" className="submit-btn" onClick={handleListing}>
                     <i className="bi bi-plus-circle"></i> Create Listing
                   </button>
                 </div>

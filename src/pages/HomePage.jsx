@@ -3,7 +3,7 @@ import "../assets/scss/style.scss";
 import Navbar from "../components/Navbar";
 import ListingCard from "../components/ListingCard";
 import Footer from "../components/Footer";
-import { mockData } from "../assets/ConstantData";
+import axios from 'axios'
 
 const HomePage = () => {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -20,20 +20,27 @@ const HomePage = () => {
     contactNumber: "",
   });
 
+  const fetchList = async () => {
+  try {
+    const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/listings`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    });
+    console.log(res.data);
+    setListings(res.data);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setIsLoading(false); // ✅ Stop loading after fetching
+  }
+};
+
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      // LocalStorage se saved listings
-      const savedListings = localStorage.getItem("wasteListings");
-      const parsedListings = savedListings ? JSON.parse(savedListings) : [];
 
-      // Mock data + localStorage merge
-      setListings([...parsedListings]);
-      setIsLoading(false);
-    };
-    fetchData();
+    fetchList()
   }, []);
 
   const filteredListings =
@@ -53,16 +60,8 @@ const HomePage = () => {
       ...formData,
     };
 
-    // State update
-    setListings((prev) => [newListing, ...prev]);
 
-    // LocalStorage update
-    const savedListings = localStorage.getItem("wasteListings");
-    const prevListings = savedListings ? JSON.parse(savedListings) : [];
-    localStorage.setItem(
-      "wasteListings",
-      JSON.stringify([newListing, ...prevListings])
-    );
+
 
     // Modal close & form reset
     setShowModal(false);
@@ -258,9 +257,8 @@ const CategoryFilter = ({ activeCategory, setActiveCategory }) => {
         {categories.map((cat) => (
           <button
             key={cat.id}
-            className={`filter-btn ${
-              activeCategory === cat.id ? "active" : ""
-            }`}
+            className={`filter-btn ${activeCategory === cat.id ? "active" : ""
+              }`}
             onClick={() => setActiveCategory(cat.id)}
           >
             {cat.name}
@@ -294,16 +292,53 @@ const StatsBar = ({ listings }) => (
 
 const ListingsGrid = ({ listings }) => (
   <div className="listings-grid my-5">
-    {listings.length > 0 ? (
-      listings.map((listing) => <ListingCard key={listing.id} data={listing} />)
-    ) : (
-      <div className="no-results">
-        <div className="no-results-icon">🔍</div>
-        <h3>No listings in this category</h3>
-        <p>Try adjusting your filters or check back later</p>
-        <button className="btn-outline">Reset Filters</button>
-      </div>
-    )}
+    <div className="row g-4">
+      {listings.map(listing => (<div key={listing.id} className="col-lg-4 col-md-6">
+          <div className="card border-0 shadow-sm rounded-3 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <h5 className="fw-bold text-primary mb-0">{listing.category}</h5>
+                <span className="badge bg-success fs-6">{listing.status}</span>
+              </div>
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted">Quantity:</span>
+                  <strong>{listing.quantity} kg</strong>
+                </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted">Price:</span>
+                  <strong className="text-success">{listing.price}</strong>
+                </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted">Total Value:</span>
+                  <strong className="text-primary">
+                    ₹ {(parseFloat(listing.quantity) * parseFloat(listing.price.replace(/\D/g, ""))).toFixed(2)}
+                  </strong>                                </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted">State:</span>
+                  <span>{listing.state}</span>
+                </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span className="text-muted">City:</span>
+                  <span>{listing.city}</span>
+                </div>
+
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Contact:</span>
+                  <span>{listing.contactNo}</span>
+                </div>
+              </div>
+              {listing.description && (
+                <div className="mb-3">Description:
+                  <small className="text-muted">{listing.description}</small>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
   </div>
 );
 

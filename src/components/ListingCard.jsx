@@ -19,11 +19,11 @@ const ListingCard = ({ data }) => (
         <div className="details">
           <div className="detail-item">
             <span className="detail-label">Quantity</span>
-            <strong className="detail-value">{data.quantity} kg</strong>
+            <strong className="detail-value">{data.quantity}</strong>
           </div>
           <div className="detail-item">
             <span className="detail-label">Price</span>
-            <strong className="detail-value">${data.pricePerKg}/kg</strong>
+            <strong className="detail-value">{data.price}</strong>
           </div>
           <div className="detail-item">
             <span className="detail-label">Purity</span>

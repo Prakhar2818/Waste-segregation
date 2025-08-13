@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.png";
+import axios from "axios";
 
 export default function SellerListingPage() {
   const location = useLocation();
@@ -9,12 +10,29 @@ export default function SellerListingPage() {
 
   const [listings, setListings] = useState([]);
 
+  const fetchList = async () => {
+    const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/listings`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        }
+      },)
+
+    // const result = res.data();
+    console.log(res.data)
+    setListings(res.data)
+  }
+
   useEffect(() => {
     // Load existing listings from localStorage
-    const savedListings = localStorage.getItem("wasteListings");
-    if (savedListings) {
-      setListings(JSON.parse(savedListings));
-    }
+    // const savedListings = localStorage.getItem("wasteListings");
+    // if (savedListings) {
+    //   setListings(JSON.parse(savedListings));
+    // }
+
+
+    fetchList();
   }, []);
 
   return (
@@ -70,7 +88,7 @@ export default function SellerListingPage() {
                 <div className="card-header bg-transparent border-0 py-4">
                   <h4 className="card-title fw-bold text-dark mb-0">
 
-                    Your {category} Listings ({listings.filter(l => l.category === category).length})
+                    Your  Listings ({listings.filter(l => l.category === category).length})
                   </h4>
                 </div>
                 <div className="card-body p-4">
@@ -87,7 +105,7 @@ export default function SellerListingPage() {
                     </div>
                   ) : (
                     <div className="row g-4">
-                      {listings.filter(l => l.category === category).map(listing => (
+                      {listings.map(listing => (
                         <div key={listing.id} className="col-lg-4 col-md-6">
                           <div className="card border-0 shadow-sm rounded-3 h-100">
                             <div className="card-body p-4">
@@ -102,27 +120,29 @@ export default function SellerListingPage() {
                                 </div>
                                 <div className="d-flex justify-content-between mb-2">
                                   <span className="text-muted">Price:</span>
-                                  <strong className="text-success">₹{listing.pricePerKg}/kg</strong>
+                                  <strong className="text-success">{listing.price}</strong>
                                 </div>
                                 <div className="d-flex justify-content-between mb-2">
                                   <span className="text-muted">Total Value:</span>
-                                  <strong className="text-primary">₹{(listing.quantity * listing.pricePerKg).toFixed(2)}</strong>
+                                  <strong className="text-primary">
+                                    ₹ {(parseFloat(listing.quantity) * parseFloat(listing.price.replace(/\D/g, ""))).toFixed(2)}
+                                  </strong>                                </div>
+                                <div className="d-flex justify-content-between mb-2">
+                                  <span className="text-muted">State:</span>
+                                  <span>{listing.state}</span>
                                 </div>
                                 <div className="d-flex justify-content-between mb-2">
-                                  <span className="text-muted">Location:</span>
-                                  <span>{listing.location}</span>
+                                  <span className="text-muted">City:</span>
+                                  <span>{listing.city}</span>
                                 </div>
-                                <div className="d-flex justify-content-between mb-2">
-                                  <span className="text-muted">Posted:</span>
-                                  <span>{new Date(listing.datePosted).toLocaleDateString()}</span>
-                                </div>
+                                
                                 <div className="d-flex justify-content-between">
                                   <span className="text-muted">Contact:</span>
-                                  <span>{listing.contactNumber}</span>
+                                  <span>{listing.contactNo}</span>
                                 </div>
                               </div>
                               {listing.description && (
-                                <div className="mb-3">
+                                <div className="mb-3">Description:
                                   <small className="text-muted">{listing.description}</small>
                                 </div>
                               )}
