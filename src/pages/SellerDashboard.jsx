@@ -18,14 +18,24 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [staticData, setStaticData] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // State and City selection
+  const [selectedState, setSelectedState] = useState("Maharashtra");
+  const [city, setCity] = useState(statesWithCities["Maharashtra"][0] || "");
+
+  // Filters
+  const [selectedCategory, setSelectedCategory] = useState("PET");
+  const [forecastMonths, setForecastMonths] = useState(3);
+
+  const forecastOptions = [3, 6, 9];
 
   useEffect(() => {
     const fetchWeightsData = async () => {
       try {
         setLoading(true);
-
         const response = await axios.get(
           `${import.meta.env.VITE_BASE_URL}/weights`,
           {
@@ -35,8 +45,6 @@ export default function Dashboard() {
             },
           }
         );
-
-        // Axios response me data already parsed hota hai
         setStaticData(response.data);
         setError(null);
       } catch (err) {
@@ -47,8 +55,45 @@ export default function Dashboard() {
       }
     };
 
+    const fetchChartData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/predict/price`,
+          {
+            params: {
+              city,
+              category: selectedCategory,
+              months: forecastMonths,
+            },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Transform the data for the chart
+        const transformedData = response.data.map((item) => ({
+          month: `${item.month.substring(0, 3)} ${item.year}`,
+          price: item.price_per_kg,
+          quantity: item.quantity_kg,
+          revenue: item.revenue,
+        }));
+
+        setChartData(transformedData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching chart data:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchWeightsData();
-  }, []);
+    fetchChartData();
+  }, [city, selectedCategory, forecastMonths]);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -63,19 +108,18 @@ export default function Dashboard() {
   });
 
   const handleListClick = (category) => {
-    // Find the item data for this category
     const itemData = staticData.find((item) => item.category === category);
 
     setSelectedItem({
       category,
-      quantity: itemData?.quantity || 0,
+      quantity: itemData?.weights || 0,
       pricePerKg: 50,
       location: city || "Mumbai",
     });
 
     setFormData({
       category,
-      quantity: itemData?.quantity || 0,
+      quantity: itemData?.weights || 0,
       pricePerKg: 50,
       description: "",
       location: city || "Mumbai",
@@ -107,7 +151,6 @@ export default function Dashboard() {
     localStorage.setItem("wasteListings", JSON.stringify(updatedListings));
 
     setShowModal(false);
-    // Navigate to listing page to show all listings
     navigate("/seller-listing", {
       state: {
         category: selectedItem.category,
@@ -115,51 +158,10 @@ export default function Dashboard() {
     });
   };
 
-  // Forecast Data (City + Category)
-  const forecastDataByCity = {
-    Mumbai: {
-      PET: [
-        { month: "Aug 2025", price: 78 },
-        { month: "Sep 2025", price: 85 },
-        { month: "Oct 2025", price: 88 },
-        { month: "Nov 2025", price: 91 },
-        { month: "Dec 2025", price: 95 },
-        { month: "Jan 2026", price: 98 },
-        { month: "Feb 2026", price: 100 },
-        { month: "Mar 2026", price: 103 },
-        { month: "Apr 2026", price: 105 },
-      ],
-    },
-    Bengaluru: {
-      PET: [
-        { month: "Aug 2025", price: 70 },
-        { month: "Sep 2025", price: 76 },
-        { month: "Oct 2025", price: 80 },
-        { month: "Nov 2025", price: 85 },
-        { month: "Dec 2025", price: 90 },
-        { month: "Jan 2026", price: 95 },
-        { month: "Feb 2026", price: 100 },
-        { month: "Mar 2026", price: 104 },
-        { month: "Apr 2026", price: 108 },
-      ],
-    },
-  };
-
-  // State and City selection
-  const [selectedState, setSelectedState] = useState("Maharashtra");
-  const [city, setCity] = useState(statesWithCities["Maharashtra"][0] || "");
-
-  // Filters
-  const [selectedCategory, setSelectedCategory] = useState("PET");
-  const [forecastMonths, setForecastMonths] = useState(3);
-
-  const forecastOptions = [3, 6, 9];
-
   // Handlers
   const handleStateChange = (e) => {
     const newState = e.target.value;
     setSelectedState(newState);
-    // Auto-select first city of that state
     const firstCity = statesWithCities[newState]?.[0] || "";
     setCity(firstCity);
   };
@@ -167,14 +169,6 @@ export default function Dashboard() {
   const handleCityChange = (e) => setCity(e.target.value);
   const handleCategoryChange = (e) => setSelectedCategory(e.target.value);
   const handleMonthsChange = (e) => setForecastMonths(Number(e.target.value));
-
-  // Chart Data with fallback if city/category is missing
-  const chartData =
-    forecastDataByCity[city]?.[selectedCategory]?.slice(0, forecastMonths) ||
-    Array.from({ length: forecastMonths }, (_, i) => ({
-      month: `Month ${i + 1}`,
-      price: 0,
-    }));
 
   return (
     <div
@@ -190,7 +184,7 @@ export default function Dashboard() {
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center">
                     <img src={Logo} alt="EcoWorth Logo" height={80} />
-                    <h1 className="display-6 fw-bold text-white mb-0">
+                    <h1 className="display-6 fw-bold mb-0">
                       Waste Dashboard
                     </h1>
                   </div>
@@ -320,41 +314,54 @@ export default function Dashboard() {
             <h3 style={{ marginBottom: "15px", color: "#334155" }}>
               ♻ Waste Quantities
             </h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#f1f5f9" }}>
-                  <th style={{ padding: "12px", textAlign: "left" }}>
-                    Category
-                  </th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>
-                    Quantity (kg)
-                  </th>
-                  <th style={{ padding: "12px", textAlign: "left" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staticData.map((item, index) => (
-                  <tr
-                    className="w-100"
-                    key={item.category}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f8fafc",
-                    }}
-                  >
-                    <td style={{ padding: "12px" }}>{item.category}</td>
-                    <td style={{ padding: "12px" }}>{item.weights}</td>
-                    <td style={{ padding: "12px" }}>
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleListClick(item.category)}
-                      >
-                        List
-                      </button>
-                    </td>
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="alert alert-danger">{error}</div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f1f5f9" }}>
+                    <th style={{ padding: "12px", textAlign: "left" }}>
+                      Category
+                    </th>
+                    <th style={{ padding: "12px", textAlign: "left" }}>
+                      Quantity (kg)
+                    </th>
+                    <th style={{ padding: "12px", textAlign: "left" }}>
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {staticData.map((item, index) => (
+                    <tr
+                      className="w-100"
+                      key={item.category}
+                      style={{
+                        backgroundColor:
+                          index % 2 === 0 ? "#ffffff" : "#f8fafc",
+                      }}
+                    >
+                      <td style={{ padding: "12px" }}>{item.category}</td>
+                      <td style={{ padding: "12px" }}>{item.weights}</td>
+                      <td style={{ padding: "12px" }}>
+                        <button
+                          className="btn btn-success"
+                          onClick={() => handleListClick(item.category)}
+                        >
+                          List
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Modal */}
@@ -473,22 +480,55 @@ export default function Dashboard() {
                 <div className="card-body p-4">
                   <h4 className="card-title fw-bold text-dark mb-4">
                     <i className="bi bi-graph-up-arrow me-2 text-success"></i>
-                    Price Forecast
+                    Price Forecast for {selectedCategory} in {city}
                   </h4>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      {chartData > 0 && (
-                        <>
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="price" fill="#82ca9d" />
-                        </>
-                      )}
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {loading ? (
+                    <div className="text-center py-4">
+                      <div
+                        className="spinner-border text-primary"
+                        role="status"
+                      >
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : error ? (
+                    <div className="alert alert-danger">{error}</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="month"
+                          label={{
+                            value: "Month",
+                            position: "insideBottom",
+                            offset: -5,
+                          }}
+                        />
+                        <YAxis
+                          label={{
+                            value: "Price (₹/kg)",
+                            angle: -90,
+                            position: "insideLeft",
+                          }}
+                        />
+                        <Tooltip
+                          formatter={(value) => [
+                            `₹${value.toFixed(2)}`,
+                            "Price per kg",
+                          ]}
+                          labelFormatter={(label) => `Month: ${label}`}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="price"
+                          name="Price per kg (₹)"
+                          fill="#4CAF50"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             </div>
